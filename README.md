@@ -379,3 +379,120 @@ def precipitation():
 
 #### We are left with t-statistics of -51.48 and pvalue of 1.9889e-24. Which suggests that months are sigificant in determining temperature. 
 
+## Bonus 2
+
+* For bonus 2, we are calculating the temperature summary statistics over specific ranges of time. 
+
+* First we create the enging to linke th database to python.
+
+```sh
+  engine = create_engine("sqlite:///Resources/hawaii.sqlite")
+  conn = engine.connect()
+```
+
+* After we will map the database so it can be raed.
+
+```sh
+  Base = automap_base()
+  Base.prepare(conn, reflect = True)
+```
+* Now we can set the tables found in the database as variables.
+
+```sh
+  Measurement = Base.classes.measurement
+  Station = Base.classes.station
+```
+
+* We can begin our session to query data for ptp graph based on ptp_error which is the max temperature minus the minimum temperature.
+
+* We will be using the function "calc_temps" to calculate the summary statistics of min, max, and avg for temperatures in a range of time given a start_date and end_date.
+
+```sh
+start_date = "2012-01-01"
+end_date = "2013-01-01"
+  t_min, t_avg, t_max = calc_temps(start_date, end_date)
+```
+
+* now we can calculate the PTP error and graph the PTP graph
+
+```sh
+  ptp_error = t_max - t_min
+  plt.figure(figsize = (3,5), dpi = 70)
+  plt.bar(0, t_avg, yerr = ptp_error, color = 'orange')
+  plt.xlim(-.75, .75)
+  plt.ylabel('Temperature (F)')
+  plt.title("Trip Average Temp")
+  plt.savefig("Images/trip_avg_temp.png")
+
+  plt.show()
+```
+![PTP_plot](Images/trip_avg_temp.png)
+
+* Next we want to see the average rainfall for each of the weather stations and information specific to each weather station.
+
+```sh
+  start_date = "2012-01-01"
+  end_date = "2012-02-01"
+
+  def precipation_sum(start_date, end_date):
+    sel = [Station.station,Station.latitude, Station.latitude, Station.elevation, func.sum(Measurement.prcp)]
+    results = session.query(*sel)\
+        .filter(Station.station == Measurement.station)\
+        .group_by(Measurement.station).\
+            filter(Measurement.date >= start_date).\
+                filter(Measurement.date <= end_date)\
+                    .order_by(func.sum(Measurement.prcp).desc()).all()
+    results_df = pd.DataFrame(results, columns = ['station_name','station_latitude','station_longitude','station_elevation','total_rain'])
+    return results_df
+
+  df = precipation_sum(start_date, end_date)
+```
+* Next we are looking for the average daily rainfall. We start by locking down a start and end date then we can use query the information and transform it to a DataFrame.
+
+*  We will be using the daily_normals function that was provided to us and it takes a string of month - date.
+
+```sh
+
+# calculate the daily normals for your trip
+# push each tuple of calculations into a list called `normals`
+
+# Set the start and end date of the trip
+start_date_parse = dt.datetime.strptime(start_date, "%Y-%m-%d")
+end_date_parse = dt.datetime.strptime(end_date,"%Y-%m-%d")
+
+normal = []
+delta_date = start_date_parse
+
+
+# Use the start and end date to create a range of dates
+delta_time = end_date_parse - start_date_parse
+
+# Use the `daily_normals` function to calculate the normals for each date string 
+# and append the results to a list called `normals`.
+if start_date <= end_date:
+    for day in range(delta_time.days):
+        delta_date += dt.timedelta(days = 1)
+        # Strip off the year and save a list of strings in the format %m-%d
+        tmin, tavg, tmax = daily_normals(delta_date.strftime('%m-%d'))[0]
+        normal.append([delta_date.strftime("%Y-%m-%d"),tmin, round(tavg,3), tmax])
+```
+
+* Using the normals data, we can create a DataFrame.
+
+```sh
+  normal_df = pd.DataFrame(normal, columns = ['date','tmin', 'tavg', 'tmax'])
+  normal_df_index = normal_df.set_index('date')
+```
+
+* Lastly we can graph it. 
+
+```sh
+  # Plot the daily normals as an area plot with `stacked=False`
+  normal_df_index.plot.area(stacked = False, figsize = (7,4))
+  plt.title("Trip Date Precipitation Data")
+  plt.savefig("Images/trip_precipitation_data.png")
+  plt.xticks(rotation = 90)
+
+  plt.show()
+```
+![Trip_precipitation data](Images/trip_precipitation_data.png)
