@@ -325,3 +325,57 @@ def precipitation():
 * We can now run the server in the browser and you can find any specific information you are looking for. 
 
 ## Bonus 1
+
+* In the bonus analysises, we are finding out changes for June and December year to year. We are also fiding out hte min, max, and average temperatures for each month and finding out the t-statistics for the table.
+
+* We first import the dependencies that we need.
+
+```sh
+  import pandas as pd
+  from datetime import datetime as dt
+```
+* Next we can read the csv's that were provided to us.
+```sh
+  dt = pd.read_csv("Resources/hawaii_measurements.csv")
+```
+
+* The we convert the date column from string to datetime.
+
+```sh
+  date_time = [dt.strptime(date, "%Y-%m-%d") for date in df['date']]
+  df["date"] = datetime
+  df_time = df.set_index['date']
+```
+
+* Now we can compare temperature changes from June and Decemver across various years
+
+```sh
+  june_df = df_time.loc[df_time.index.month == 6]
+  dec_df = df_time.loc[df_time.index.month == 12]
+```
+* Now we can find the average temperature within June and December.
+
+```sh
+  june_tobs_avg = june_df['tobs'].mean()
+  round(june_tobs_avg,2)
+  dec_tobs_avg = dec_df['tobs'].mean()
+  round(june_tobs_avg,2)
+```
+
+* Now that we have calculated the temperature summary statistics for two months, we can do the same for all the months.
+
+```sh
+  avg_temp = pd.DataFrame(['jan','feb','mar','apr','may','june','july','aug','sep','oct','nov','dec'], columns = ['month'])
+  avg_temp_list = [df_time.loc[df_time.index.month == month]['tobs'].mean() for month in range(1,13)]
+  avg_temp['avg_temp'] = avg_temp_list
+```
+* Lastly we can run the t-test for the DataFrame
+
+```sh
+  from scipy import stats
+
+  t_test = stats.ttest_ind(avg_temp.index, avg_temp['avg_temp'])
+```
+
+#### We are left with t-statistics of -51.48 and pvalue of 1.9889e-24. Which suggests that months are sigificant in determining temperature. 
+
