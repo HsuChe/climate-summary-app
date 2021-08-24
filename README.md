@@ -2,7 +2,7 @@
 
 ### Tropical Vacation
 
-We will be using SQL Alchemy to analyze SQL-lite datebases. Using python, we will be constructing graphs and create custom API to enable users access to the information in the database.  
+We will be using SQL Alchemy to analyze SQL-lite datebases. Using python, we will be constructing graphs and create custom API to enable users access to the information in the database.
 
 ![tropics.png](Images/maldives-1993704_1920.jpg)
 
@@ -10,7 +10,7 @@ To do the analysis and find the results necessary to make yoru vacation a succes
 
 ## Setting up SQL Alchemy
 
-The first thing we are going to do is to set up SQL lite. 
+The first thing we are going to do is to set up SQL lite.
 
 1. We will need to import the dependencies that we need.
 
@@ -19,6 +19,7 @@ The first thing we are going to do is to set up SQL lite.
   from sqlalchemy.orm import Session
   from sqlalchem import create_engine, func, inspect
 ```
+
 * First, create the engine that will link us to the database in SQL lite
 
 ```sh
@@ -32,7 +33,8 @@ The first thing we are going to do is to set up SQL lite.
   Base.automap_base()
   Base.prepare(conn, reflect = True)
 ```
-* Now we can use various auto_map functions to identify specific classes in the dataset. 
+
+* Now we can use various auto_map functions to identify specific classes in the dataset.
 
 ```sh
   Base.classes.key()
@@ -44,14 +46,17 @@ The first thing we are going to do is to set up SQL lite.
 Measurement = Base.classes.measurement
 Station = Base.classes.station
 ```
-* We can spend some time to explore the database and see exactly what kinds of data we are working with. 
+
+* We can spend some time to explore the database and see exactly what kinds of data we are working with.
 
 ```sh
   inspector = inspect(conn)
   inspector.get_table_names()
   column_info = inspector.get_columns('measurement)
 ```
+
 * column_info will have the column information in the table "measurement.
+
 ```sh
   for column in column_info:
     print(
@@ -60,6 +65,7 @@ Station = Base.classes.station
       column['primary_key']
     )
 ```
+
 * We can see all the columns which is id, station, date, prcp, and tobs. Id will be our primary key for this table and pcp/tobs are floats that we can calculate. We will do the same with the station table.
 
 ```sh
@@ -70,8 +76,8 @@ Station = Base.classes.station
       columsn['primary_key']
       )
 ```
-* The "station" table has id, station, name, latitude, logitude, elevation, and the primary key is id. Both the station and measurement tables has "station" column, so we can use that as a mechanism for joining the tables. 
 
+* The "station" table has id, station, name, latitude, logitude, elevation, and the primary key is id. Both the station and measurement tables has "station" column, so we can use that as a mechanism for joining the tables.
 * After knowing everything about the database we are working with, we can now start a connection session and query the data we need for the analysis.
 
 ```sh
@@ -80,7 +86,7 @@ Station = Base.classes.station
 
 ### Analyzing the Precipitation Data
 
-2. The first analysis we want to do is figure out rain in each location over the last year. 
+2. The first analysis we want to do is figure out rain in each location over the last year.
 
 * To begin, we can parse the date column from Measurement and query all the precipitation information we want a year from the most recent date in the dataset.
 
@@ -94,11 +100,13 @@ Station = Base.classes.station
 ```sh
   target_date = f"{recent_parsed.year - 1}-{recent_parsed.month:02}-{recent_parsed.day:02}"
 ```
+
 * With the most recent date and the target date, we can construct our query parameters to extract the data that we need.
 
 ```sh
   result = session.query(Measurement).filter(func.strftime("%Y-%m-%d" , Measurement.date) > target_date).all()
 ```
+
 * We now have all the information we need from the dataset. We can begin processing the precipitation data.
 
 ```sh
@@ -106,12 +114,14 @@ Station = Base.classes.station
   for row in result:
     precipation_list.append([row.date,row.prcp])
 ```
+
 * Now we set it into a DataFrame for graphing
 
 ```sh
   preci_df = pd.DataFrame(precipation_list, columns  = ['Date','Precipitation'])
   preci_df.set_index('Date')
 ```
+
 * Now we graph
 
 ```sh
@@ -124,8 +134,7 @@ Station = Base.classes.station
   plt.show()
 ```
 
-  ![precipitation](Images/precipitation.png)
-
+![precipitation](Images/precipitation.jpeg)
 
 ### Station Analysis
 
@@ -142,6 +151,7 @@ Station = Base.classes.station
     func.avg(Measurement.tobs)
     ).group_by(Measurement.station).order_by(func.count(Measurement.id).desc()).all()
 ```
+
 * Now we want to graph the most common temperature for the  specific station with the highest activies.
 
   ```sh
@@ -157,22 +167,24 @@ Station = Base.classes.station
     plt.show()
 
   ```
- ![precipitation](Images/active_station_info.png)
 
-  ### Custom API 
+![precipitation](Images/active_station_info.jpeg)
 
-  4. We will now set up a custom routes for custom API off of our private local servers.
+### Custom API
 
-  * We first import all the dependencies that is needed. 
+4. We will now set up a custom routes for custom API off of our private local servers.
 
-  ```sh
-    import datetime as dt
+* We first import all the dependencies that is needed.
 
-    from sqlalchemy.ext.automap import automap_base
-    from sqlalchemy.orm import Session
-    from sqlalchemy import create_engine, func
-    from flask import Flask, jsonify
-  ```
+```sh
+  import datetime as dt
+
+  from sqlalchemy.ext.automap import automap_base
+  from sqlalchemy.orm import Session
+  from sqlalchemy import create_engine, func
+  from flask import Flask, jsonify
+```
+
 * The we build the engine and link to our SQL-lite database
 
 ```sh
@@ -185,7 +197,7 @@ Station = Base.classes.station
   app = Flask(__name__)
 ```
 
-* Create the homepage route with all the routes listed. 
+* Create the homepage route with all the routes listed.
 
 ```sh
   @app.route("/")
@@ -220,7 +232,9 @@ def precipitation():
       result_list.append(result)
   return jsonify(result_list)
 ```
+
 * Then we build a route for detailes on the stations.
+
 ```sh
   @app.route("/api/v1.0/stations")
   def stations():
@@ -243,9 +257,10 @@ def precipitation():
             'elevation':elevation
         }
         result_list.append(result)
-    
+  
     return jsonify(result_list)
 ```
+
 * We can create routes for general temperatures as well.
 
 ```sh
@@ -259,17 +274,18 @@ def precipitation():
     station_info = session.query(Measurement.date,Measurement.prcp).filter(
         Measurement.station == active_station).all()
     session.close
-    
-    result_list = []    
+  
+    result_list = []  
     for date, prcp in station_info:
         result = {
             "date":date,
             "precipitation(in)":prcp
         }
         result_list.append(result)
-    
+  
     return jsonify(result_list)
 ```
+
 * Lastly we can create routes for specific date and a range of dates.
 
 ```sh
@@ -290,19 +306,19 @@ def precipitation():
             'avg_temp':avg   
         }
         result_list.append(result)
-    
+  
     return jsonify(result_list)
 
   @app.route('/api/v1.0/<start>/<end>')
   def date_range(start,end):
-    
+  
     if dt.datetime.strptime(start,"%Y-%m-%d") < dt.datetime.strptime(end,"%Y-%m-%d"):
         session = Session(engine)
         query_results = session.query(
             func.min(Measurement.tobs),
             func.max(Measurement.tobs),
             func.avg(Measurement.tobs)
-            ).filter(Measurement.date >= start).filter(Measurement.date <= end).all()    
+            ).filter(Measurement.date >= start).filter(Measurement.date <= end).all()  
         session.close()
         result_list = []
         for min, max, avg in query_results:
@@ -316,25 +332,28 @@ def precipitation():
     else:
         return "<h1>Error calculating date range</h1>"
 ```
+
 * Lastly we will set debugging paramters, in this case we want any errors to render in the browser.
 
 ```sh
   if __name__ == '__main__':
     app.run(debug=True)
 ```
-* We can now run the server in the browser and you can find any specific information you are looking for. 
+
+* We can now run the server in the browser and you can find any specific information you are looking for.
 
 ## Bonus 1
 
 * In the bonus analysises, we are finding out changes for June and December year to year. We are also fiding out hte min, max, and average temperatures for each month and finding out the t-statistics for the table.
-
 * We first import the dependencies that we need.
 
 ```sh
   import pandas as pd
   from datetime import datetime as dt
 ```
+
 * Next we can read the csv's that were provided to us.
+
 ```sh
   dt = pd.read_csv("Resources/hawaii_measurements.csv")
 ```
@@ -353,6 +372,7 @@ def precipitation():
   june_df = df_time.loc[df_time.index.month == 6]
   dec_df = df_time.loc[df_time.index.month == 12]
 ```
+
 * Now we can find the average temperature within June and December.
 
 ```sh
@@ -369,6 +389,7 @@ def precipitation():
   avg_temp_list = [df_time.loc[df_time.index.month == month]['tobs'].mean() for month in range(1,13)]
   avg_temp['avg_temp'] = avg_temp_list
 ```
+
 * Lastly we can run the t-test for the DataFrame
 
 ```sh
@@ -377,12 +398,11 @@ def precipitation():
   t_test = stats.ttest_ind(avg_temp.index, avg_temp['avg_temp'])
 ```
 
-#### We are left with t-statistics of -51.48 and pvalue of 1.9889e-24. Which suggests that months are sigificant in determining temperature. 
+#### We are left with t-statistics of -51.48 and pvalue of 1.9889e-24. Which suggests that months are sigificant in determining temperature.
 
 ## Bonus 2
 
-* For bonus 2, we are calculating the temperature summary statistics over specific ranges of time. 
-
+* For bonus 2, we are calculating the temperature summary statistics over specific ranges of time.
 * First we create the enging to linke th database to python.
 
 ```sh
@@ -396,6 +416,7 @@ def precipitation():
   Base = automap_base()
   Base.prepare(conn, reflect = True)
 ```
+
 * Now we can set the tables found in the database as variables.
 
 ```sh
@@ -404,7 +425,6 @@ def precipitation():
 ```
 
 * We can begin our session to query data for ptp graph based on ptp_error which is the max temperature minus the minimum temperature.
-
 * We will be using the function "calc_temps" to calculate the summary statistics of min, max, and avg for temperatures in a range of time given a start_date and end_date.
 
 ```sh
@@ -426,7 +446,8 @@ end_date = "2013-01-01"
 
   plt.show()
 ```
-![PTP_plot](Images/trip_avg_temp.png)
+
+![PTP_plot](Images/trip_avg_temp.jpeg)
 
 * Next we want to see the average rainfall for each of the weather stations and information specific to each weather station.
 
@@ -447,9 +468,9 @@ end_date = "2013-01-01"
 
   df = precipation_sum(start_date, end_date)
 ```
-* Next we are looking for the average daily rainfall. We start by locking down a start and end date then we can use query the information and transform it to a DataFrame.
 
-*  We will be using the daily_normals function that was provided to us and it takes a string of month - date.
+* Next we are looking for the average daily rainfall. We start by locking down a start and end date then we can use query the information and transform it to a DataFrame.
+* We will be using the daily_normals function that was provided to us and it takes a string of month - date.
 
 ```sh
 
@@ -484,7 +505,7 @@ if start_date <= end_date:
   normal_df_index = normal_df.set_index('date')
 ```
 
-* Lastly we can graph it. 
+* Lastly we can graph it.
 
 ```sh
   # Plot the daily normals as an area plot with `stacked=False`
@@ -495,4 +516,5 @@ if start_date <= end_date:
 
   plt.show()
 ```
+
 ![Trip_precipitation data](Images/trip_precipitation_data.png)
