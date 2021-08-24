@@ -159,5 +159,169 @@ Station = Base.classes.station
   ```
  ![precipitation](Images/active_station_info.png)
 
-  ## Bonus 1
-  
+  ### Custom API 
+
+  4. We will now set up a custom routes for custom API off of our private local servers.
+
+  * We first import all the dependencies that is needed. 
+
+  ```sh
+    import datetime as dt
+
+    from sqlalchemy.ext.automap import automap_base
+    from sqlalchemy.orm import Session
+    from sqlalchemy import create_engine, func
+    from flask import Flask, jsonify
+  ```
+* The we build the engine and link to our SQL-lite database
+
+```sh
+  engine = create_engine("sqlite:///Resources/hawaii.sqllite")
+  conn = engine.connect()
+  Base = automap_base()
+  Measurement = Base.classes.measurement
+  Station = Base.classes.station
+
+  app = Flask(__name__)
+```
+
+* Create the homepage route with all the routes listed. 
+
+```sh
+  @app.route("/")
+  def welcome():
+    return(
+    f"<h2>All Available Routes:</h2><br/>"
+    f"<h2>Precipitation: /api/v1.0/precipitation</h2><br/>"
+    f"<h2>List of Stations in Dataset: /api/v1.0/stations<br/>"
+    f"<h2>Temperature for one year: /api/v1.0/tobs<br/>"
+    f"<h2>Temperature stat from the start date(yyyy-mm-dd): /api/v1.0/yyyy-mm-dd<br/>"
+    f"<h2>Temperature stat from start to end dates(yyyy-mm-dd): /api/v1.0/yyyy-mm-dd/yyyy-mm-dd"
+    )
+```
+
+* Then we create a route for the precipitation/
+
+```sh
+@app.route("/api/v1.0/precipitation")
+def precipitation():
+  session = Session(engine)
+  all_prcp = session.query(
+      Measurement.date,
+      Measurement.prcp
+  ).all()
+  session.close
+  result_list = []
+  for date, prcp in all_prcp:
+      result = {
+          'date':date,
+          'precipitation':prcp, 
+      }
+      result_list.append(result)
+  return jsonify(result_list)
+```
+* Then we build a route for detailes on the stations.
+```sh
+  @app.route("/api/v1.0/stations")
+  def stations():
+    session = Session(engine)
+    stations = session.query(
+        Station.station,
+        Station.name,
+        Station.longitude,
+        Station.latitude,
+        Station.elevation
+    ).all()
+    session.close
+    result_list = []
+    for station, name, longitude, latitude, elevation in stations:
+        result = {
+            'station':station,
+            'name':name,
+            'longitude':longitude,
+            'latitude':latitude,
+            'elevation':elevation
+        }
+        result_list.append(result)
+    
+    return jsonify(result_list)
+```
+* We can create routes for general temperatures as well.
+
+```sh
+  @app.route("/api/v1.0/tobs")
+  def active_temp():
+    session = Session(engine)
+    active_station = session.query(
+        Measurement.station
+    ).group_by(Measurement.station).\
+        order_by(func.count(Measurement.id).desc()).first()[0]
+    station_info = session.query(Measurement.date,Measurement.prcp).filter(
+        Measurement.station == active_station).all()
+    session.close
+    
+    result_list = []    
+    for date, prcp in station_info:
+        result = {
+            "date":date,
+            "precipitation(in)":prcp
+        }
+        result_list.append(result)
+    
+    return jsonify(result_list)
+```
+* Lastly we can create routes for specific date and a range of dates.
+
+```sh
+  @app.route("/api/v1.0/<start>")
+  def date(start):
+    session = Session(engine)
+    query_result = session.query(
+        func.min(Measurement.tobs),
+        func.max(Measurement.tobs),
+        func.avg(Measurement.tobs)
+        ).filter(func.strftime("%Y-%m-%d", Measurement.date) >= start).all()
+    session.close
+    result_list = []
+    for min, max, avg in query_result:
+        result = {
+            'min_temp':min,
+            'max_temp':max,
+            'avg_temp':avg   
+        }
+        result_list.append(result)
+    
+    return jsonify(result_list)
+
+  @app.route('/api/v1.0/<start>/<end>')
+  def date_range(start,end):
+    
+    if dt.datetime.strptime(start,"%Y-%m-%d") < dt.datetime.strptime(end,"%Y-%m-%d"):
+        session = Session(engine)
+        query_results = session.query(
+            func.min(Measurement.tobs),
+            func.max(Measurement.tobs),
+            func.avg(Measurement.tobs)
+            ).filter(Measurement.date >= start).filter(Measurement.date <= end).all()    
+        session.close()
+        result_list = []
+        for min, max, avg in query_results:
+            result = {
+                'min_temp':min,
+                'max_temp':max,
+                'avg_temp':avg   
+            }
+            result_list.append(result)
+        return jsonify(result_list)
+    else:
+        return "<h1>Error calculating date range</h1>"
+```
+* Lastly we will set debugging paramters, in this case we want any errors to render in the browser.
+
+```sh
+  if __name__ == '__main__':
+    app.run(debug=True)
+```
+* We can now run the server in the browser and you can find any specific information you are looking for. 
+
+## Bonus 1
