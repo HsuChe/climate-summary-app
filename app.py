@@ -40,6 +40,7 @@ def precipitation():
             'precipitation':prcp, 
         }
         result_list.append(result)
+    return jsonify(result_list)
     
 @app.route("/api/v1.0/stations")
 def stations():
@@ -128,8 +129,6 @@ def date_range(start,end):
         return jsonify(result_list)
     else:
         return "<h1>Error calculating date range</h1>"
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
