@@ -125,7 +125,7 @@ Station = Base.classes.station
 * Now we graph
 
 ```sh
-  prec_df_sort.plot(figsize = (7,4))
+  prec_df_sort.plot(figsize = (10,4))
   plt.title('Percipitation Between 2016 and 2017')
   plt.ylabel('Percipitation')
   plt.xticks(rotation = 45)
@@ -159,7 +159,7 @@ Station = Base.classes.station
     ).all()
     station_df = pd.DataFrame(active_station_data, columns = ['Date','tobs'])
     station_sort = station_df.set_index('Date')
-    station_sort.plot.hist(figsize = (7,4), bins = 12)
+    station_sort.plot.hist(figsize = (10,4), bins = 12)
     plt.title(f' Common Temperature for Station {station_temp[0][0]}')
     plt.xlable('Temperature')
     plt.savefig('Images/active_station_info.png')
@@ -517,4 +517,4 @@ if start_date <= end_date:
   plt.show()
 ```
 
-![Trip_precipitation data](Images/trip_precipitation_data.png)
+![Trip_precipitation data](Images/trip_precipitation_data.jpeg)
