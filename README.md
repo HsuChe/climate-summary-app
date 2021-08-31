@@ -134,7 +134,7 @@ Station = Base.classes.station
   plt.show()
 ```
 
-![precipitation](Images/precipitation.jpeg)
+<img src="Images/precipitation.jpeg" alt="Precipitation Between 2016 and 2017">
 
 ### Station Analysis
 
